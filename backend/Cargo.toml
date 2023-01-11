@@ -36,4 +36,5 @@ zxcvbn = "*"
 itertools = "*"
 
 [features]
+default = ["mysql"]
 mysql = ["sqlx/mysql"]
