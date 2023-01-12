@@ -1,4 +1,8 @@
 -- Character & Auth related tables
+CREATE TABLE `account` (
+  `id` BIGINT PRIMARY KEY NOT NULL
+) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE `alliance` (
   `id` BIGINT PRIMARY KEY NOT NULL,
   `name` text NOT NULL
@@ -14,6 +18,7 @@ CREATE TABLE `corporation` (
 
 CREATE TABLE `character` (
   `id` bigint PRIMARY KEY,
+  `account_id` BIGINT NOT NULL,
   `name` varchar(255) NOT NULL,
   `corporation_id` BIGINT NULL,
   FULLTEXT KEY `name` (`name`) WITH PARSER `ngram`,
@@ -37,22 +42,13 @@ CREATE TABLE `refresh_token` (
   CONSTRAINT `refresh_token_ibfk_1` FOREIGN KEY (`character_id`) REFERENCES `character` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `admin` (
-    `character_id` BIGINT PRIMARY KEY NOT NULL,
-    `role` VARCHAR(64) NOT NULL,
-    `granted_at` BIGINT NOT NULL,
-    `granted_by_id` BIGINT NOT NULL,
-    CONSTRAINT `character_role` FOREIGN KEY (`character_id`) REFERENCES `character` (`id`),
-    CONSTRAINT `admin_character` FOREIGN KEY (`granted_by_id`) REFERENCES `character` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE `alt_character` (
-  `account_id` bigint NOT NULL,
-  `alt_id` bigint NOT NULL,
-  PRIMARY KEY (`account_id`,`alt_id`),
-  KEY `alt_id` (`alt_id`),
-  CONSTRAINT `alt_character_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `character` (`id`),
-  CONSTRAINT `alt_character_ibfk_2` FOREIGN KEY (`alt_id`) REFERENCES `character` (`id`)
+CREATE TABLE `role` (
+  `account_id` BIGINT PRIMARY KEY NOT NULL,
+  `role` VARCHAR(64) NOT NULL,
+  `granted_at` BIGINT NOT NULL,
+  `granted_by_id` BIGINT NOT NULL,
+  CONSTRAINT `granted_to` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`),
+  CONSTRAINT `granted_by` FOREIGN KEY (`granted_by_id`) REFERENCES `account` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Feature tables
