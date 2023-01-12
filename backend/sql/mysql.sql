@@ -264,11 +264,11 @@ CREATE TABLE `waitlist_entry_fit` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `wiki_user` (
-  `character_id` BIGINT PRIMARY KEY NOT NULL,
+  `account_id` BIGINT PRIMARY KEY NOT NULL,
   `user` varchar(255) NOT NULL UNIQUE,
   `hash` varchar(60) NOT NULL,
   `mail` varchar(255) NOT NULL UNIQUE,
-  CONSTRAINT `wiki_character` FOREIGN KEY (`character_id`) REFERENCES `character` (`id`)
+  CONSTRAINT `wiki_account` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `role_mapping` (
@@ -285,14 +285,22 @@ SELECT
     w.hash AS `hash`,
     w.mail AS `mail`
 FROM `wiki_user` AS w
+JOIN `account` AS a ON
+    a.id = w.account_id
 JOIN `character` AS c ON
-     c.id = w.character_id;
+    c.id = a.main_character;
 
 CREATE VIEW `dokuwiki_groups` AS
 SELECT
     u.user as `user`,
-    COALESCE(m.dokuwiki_role, LOWER(a.role)) AS `group`
+    COALESCE(m.dokuwiki_role, LOWER(r.role)) AS `group`
 FROM `wiki_user` as u
-JOIN `admin` AS a USING (`character_id`)
+JOIN `role` AS r USING (`account_id`)
 LEFT JOIN `role_mapping` AS m ON
-    m.waitlist_role = a.role;
+    m.waitlist_role = r.role;
+
+
+-- Notes:
+--
+-- wiki_user.user must not be changed after being set once
+-- https://aaronfrancis.com/2013/using-mysql-triggers-to-ensure-immutability

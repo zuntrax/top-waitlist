@@ -56,5 +56,43 @@ INNER JOIN `character` AS cha ON
 INNER JOIN `character` AS grn ON
     grn.id = adm.granted_by_id;
 
+-- Dokuwiki access can now be tied to accounts instead of characters.
+ALTER TABLE `wiki_user` ADD COLUMN `account_id` BIGINT NOT NULL;
+ALTER TABLE `wiki_user` ADD CONSTRAINT `wiki_account` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)
+
+UPDATE wiki_user, (
+    SELECT
+        wik.character_id,
+        cha.account_id
+    FROM wiki_user AS wik
+    JOIN `character` AS cha ON
+        cha.id = wik.character_id
+) AS mapping
+SET wiki_user.account_id = mapping.account_id
+WHERE wiki_user.character_id = mapping.character_id;
+
+ALTER VIEW `dokuwiki_user` AS
+SELECT
+    w.user AS `user`,
+    c.name AS `name`,
+    w.hash AS `hash`,
+    w.mail AS `mail`
+FROM `wiki_user` AS w
+JOIN `account` AS a ON
+    a.id = w.account_id
+JOIN `character` AS c ON
+    c.id = a.main_character;
+
+ALTER VIEW `dokuwiki_groups` AS
+SELECT
+    u.user as `user`,
+    COALESCE(m.dokuwiki_role, LOWER(r.role)) AS `group`
+FROM `wiki_user` as u
+JOIN `role` AS r USING (`account_id`)
+LEFT JOIN `role_mapping` AS m ON
+    m.waitlist_role = r.role;
+
 -- Get rid of the old role infrastructure.
 DROP TABLE `admin`;
+ALTER TABLE `wiki_user` DROP CONSTRAINT `wiki_character`;
+ALTER TABLE `wiki_user` DROP COLUMN `character_id`;
